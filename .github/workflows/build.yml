@@ -218,7 +218,7 @@ jobs:
         uses: docker://ghcr.io/lite-xl/lite-xl-build-box-manylinux:v4
         with:
           entrypoint: /bin/bash
-          args: -c "bash scripts/build.sh --addons --debug --forcefallback --lto --portable --mode ${{ needs.version.outputs.buildtype }} -b build --cross aarch64"
+          args: -c "bash scripts/build.sh --addons --debug --forcefallback --lto --portable --mode ${{ needs.version.outputs.buildtype }} -b build --cross-arch aarch64"
 
       - name: Package Linux (Portable ARM64)
         run: |
