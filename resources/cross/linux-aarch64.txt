@@ -5,7 +5,7 @@ objc = ['clang']
 objcpp = ['clang++']
 ar = ['ar']
 strip = ['strip']
-pkgconfig = ['pkgconfig']
+pkg-config = ['pkg-config']
 
 [built-in options]
 c_args = ['-arch', 'arm64']
