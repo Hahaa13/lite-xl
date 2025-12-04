@@ -202,6 +202,34 @@ jobs:
             *.tar.gz
             *.AppImage
 
+  build_linux_arm64:
+    name: Linux (ARM64)
+    needs: [version]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Enable QEMU for ARM64
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Build (Portable)
+        uses: docker://ghcr.io/lite-xl/lite-xl-build-box-manylinux:v4
+        with:
+          entrypoint: /bin/bash
+          args: -c "bash scripts/build.sh --addons --debug --forcefallback --lto --portable --mode ${{ needs.version.outputs.buildtype }} -b build --cross aarch64"
+
+      - name: Package Linux (Portable ARM64)
+        run: |
+          tar -C build -czvf lite-xl-${{ needs.version.outputs.ref }}-aarch64-linux-portable.tar.gz lite-xl
+
+      - name: Upload (Release)
+        uses: actions/upload-artifact@v5
+        with:
+          name: lite-xl-${{ needs.version.outputs.ref }}-aarch64-linux-portable-release
+          path: |
+            *.tar.gz
 
   build_windows:
     name: Windows (x86_64) (MSYS)
