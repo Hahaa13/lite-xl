@@ -197,8 +197,9 @@ jobs:
       - name: Upload (Release)
         uses: actions/upload-artifact@v5
         with:
-          name: lite-xl-${{ needs.version.outputs.ref }}-x86_64-linux-portable-release
+          name: lite-xl-${{ needs.version.outputs.ref }}-arm_64-linux-portable-release
           path: |
+            build/
             *.tar.gz
             *.AppImage
 
