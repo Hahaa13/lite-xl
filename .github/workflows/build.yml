@@ -235,6 +235,8 @@ jobs:
           name: lite-xl-${{ needs.version.outputs.ref }}-arm64-linux-portable-release
           path: |
             build/lite-xl
+            *.tar.gz
+            *.AppImage
             
   build_windows:
     name: Windows (x86_64) (MSYS)
