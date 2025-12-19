@@ -230,7 +230,6 @@ jobs:
 
       - name: Test
         run: |
-          ls -A
           cd build
           ls -A
           cd ..
