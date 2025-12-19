@@ -202,7 +202,40 @@ jobs:
             *.tar.gz
             *.AppImage
 
+  build_linux_arm64:
+    name: Linux (arm64)
+    needs: [version]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
 
+      - name: Build
+        uses: docker://ghcr.io/lite-xl/lite-xl-build-box-manylinux:v4
+        with:
+          entrypoint: /entrypoint.sh
+          args: bash scripts/build.sh --addons --debug --forcefallback --lto --portable --mode ${{ needs.version.outputs.buildtype }} -b build
+
+      - name: Package Linux (Portable)
+        uses: docker://ghcr.io/lite-xl/lite-xl-build-box-manylinux:v4
+        with:
+          platform: linux/arm64
+          run: tar -C build -czvf lite-xl-${{ needs.version.outputs.ref }}-x86_64-linux-portable.tar.gz lite-xl
+          
+      - name: Package Linux (AppImage)
+        uses: docker://ghcr.io/lite-xl/lite-xl-build-box-manylinux:v4
+        with:
+          platform: linux/arm64
+          entrypoint: /entrypoint.sh
+          run: bash scripts/package-appimage.sh --debug --version ${{ needs.version.outputs.ref }} -b build
+
+      - name: Upload (Release)
+        uses: actions/upload-artifact@v5
+        with:
+          name: lite-xl-${{ needs.version.outputs.ref }}-x86_64-linux-portable-release
+          path: |
+            *.tar.gz
+            *.AppImage
+            
   build_windows:
     name: Windows (x86_64) (MSYS)
     runs-on: windows-2022
