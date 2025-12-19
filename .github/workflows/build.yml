@@ -228,6 +228,9 @@ jobs:
           entrypoint: /entrypoint.sh
           run: bash scripts/package-appimage.sh --debug --version ${{ needs.version.outputs.ref }} -b build
 
+      - name: Test
+        run: ls -A
+        
       - name: Upload (Release)
         uses: actions/upload-artifact@v5
         with:
