@@ -229,7 +229,11 @@ jobs:
           run: bash scripts/package-appimage.sh --debug --version ${{ needs.version.outputs.ref }} -b build
 
       - name: Test
-        run: ls -A
+        run: |
+          ls -A
+          cd build
+          ls -A
+          cd ..
         
       - name: Upload (Release)
         uses: actions/upload-artifact@v5
