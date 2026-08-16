@@ -137,7 +137,7 @@ end
 
 
 function TitleView:draw()
-  self:draw_background(style.background2)
+  self:draw_background(style.titlebar_background or style.background2)
   self:draw_window_title()
   self:draw_window_controls()
 end

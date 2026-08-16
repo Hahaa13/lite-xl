@@ -607,13 +607,21 @@ end
 ---@param draw_fn fun(font,color,text,align, x,y,w,h):number
 local function draw_items(self, items, x, y, draw_fn)
   local font = style.font
-  local color = style.text
+  local color = style.statusbar_text or style.text
 
   for _, item in ipairs(items) do
     if Object.is(item, renderer.font) then
       font = item
     elseif type(item) == "table" then
-      color = item
+      -- Status bars with a colored background (e.g. the VSCode blue bar)
+      -- usually want their own text colors instead of the default ones.
+      if item == style.text then
+        color = style.statusbar_text or style.text
+      elseif item == style.dim then
+        color = style.statusbar_dim or style.dim
+      else
+        color = item
+      end
     else
       x = draw_fn(font, color, item, nil, x, y, 0, self.size.y)
     end
@@ -1169,7 +1177,7 @@ end
 function StatusView:draw()
   if not self.visible and self.size.y <= 0 then return end
 
-  self:draw_background(style.background2)
+  self:draw_background(style.statusbar_background or style.background2)
 
   if self.message and system.get_time() <= self.message_timeout then
     self:draw_items(self.message, false, 0, self.size.y)

@@ -534,30 +534,45 @@ function Node:draw_tab_title(view, font, is_active, is_hovered, x, y, w, h)
       end
     end
   end
-  local color = style.dim
-  if is_active then color = style.text end
-  if is_hovered then color = style.text end
+  local color = style.tab_text or style.dim
+  if is_active or is_hovered then
+    color = style.tab_active_text or style.text
+  end
   common.draw_text(font, color, text, align, x, y, w, h)
 end
 
 function Node:draw_tab_borders(view, is_active, is_hovered, x, y, w, h, standalone)
-  -- Tabs deviders
+  -- Tab strip colors. Themes can override these through `style`.
+  local strip = style.tab_strip_background or style.background2
+  local tab_bg = style.tab_background or style.background2
+  local active_bg = style.tab_active_background or style.background
+  local active_border = style.tab_active_border or style.accent
+  local active_border_w = style.tab_active_border_width or style.divider_size
+  local hover_border = style.tab_hover_border or style.divider
+  local hover_border_w = style.tab_hover_border_width or style.divider_size
   local ds = style.divider_size
-  local color = style.dim
-  local padding_y = style.padding.y
-  renderer.draw_rect(x + w, y + padding_y, ds, h - padding_y*2, style.dim)
+
   if standalone then
-    renderer.draw_rect(x-1, y-1, w+2, h+2, style.background2)
+    -- Outline of a dragged tab.
+    renderer.draw_rect(x - 1, y - 1, w + 2, h + 2, strip)
   end
-  -- Full border
+
   if is_active then
-    color = style.text
-    renderer.draw_rect(x, y, w, h, style.background)
-    renderer.draw_rect(x, y, w, ds, style.divider)
-    renderer.draw_rect(x + w, y, ds, h, style.divider)
-    renderer.draw_rect(x - ds, y, ds, h, style.divider)
+    -- Active tab blends with the editor below it and gets an accent bar on top.
+    renderer.draw_rect(x, y, w, h, active_bg)
+    renderer.draw_rect(x, y, w, active_border_w, active_border)
+  else
+    renderer.draw_rect(x, y, w, h, tab_bg)
+    if is_hovered then
+      renderer.draw_rect(x, y, w, hover_border_w, hover_border)
+    end
+    -- The tab strip's bottom edge, only drawn below inactive tabs so that
+    -- the active tab appears attached to the editor.
+    renderer.draw_rect(x, y + h - ds, w, ds, strip)
   end
-  return x + ds, y, w - ds*2, h
+  -- Separator between two tabs.
+  renderer.draw_rect(x + w - ds, y, ds, h, strip)
+  return x, y, w, h
 end
 
 function Node:draw_tab(view, is_active, is_hovered, is_close_hovered, x, y, w, h, standalone)
@@ -567,7 +582,7 @@ function Node:draw_tab(view, is_active, is_hovered, is_close_hovered, x, y, w, h
   local cx, cw, cpad = close_button_location(x, w)
   local show_close_button = ((is_active or is_hovered) and not standalone and config.tab_close_button)
   if show_close_button then
-    local close_style = is_close_hovered and style.text or style.dim
+    local close_style = is_close_hovered and (style.tab_active_text or style.text) or (style.tab_text or style.dim)
     common.draw_text(style.icon_font, close_style, "C", nil, cx, y, cw, h)
   end
   -- Title
@@ -581,11 +596,9 @@ end
 function Node:draw_tabs()
   local _, y, w, h, scroll_padding = self:get_scroll_button_rect(1)
   local x = self.position.x
-  local ds = style.divider_size
-  local dots_width = style.font:get_width("…")
+  local strip = style.tab_strip_background or style.background2
   core.push_clip_rect(x, y, self.size.x, h)
-  renderer.draw_rect(x, y, self.size.x, h, style.background2)
-  renderer.draw_rect(x, y + h - ds, self.size.x, ds, style.divider)
+  renderer.draw_rect(x, y, self.size.x, h, strip)
   local tabs_number = self:get_visible_tabs_number()
 
   for i = self.tab_offset, self.tab_offset + tabs_number - 1 do
@@ -599,12 +612,12 @@ function Node:draw_tabs()
   if #self.views > tabs_number then
     local _, pad = get_scroll_button_width()
     local xrb, yrb, wrb, hrb = self:get_scroll_button_rect(1)
-    renderer.draw_rect(xrb + pad, yrb, wrb * 2, hrb, style.background2)
-    local left_button_style = (self.hovered_scroll_button == 1 and self.tab_offset > 1) and style.text or style.dim
+    renderer.draw_rect(xrb + pad, yrb, wrb * 2, hrb, strip)
+    local left_button_style = (self.hovered_scroll_button == 1 and self.tab_offset > 1) and (style.tab_active_text or style.text) or (style.tab_text or style.dim)
     common.draw_text(style.icon_font, left_button_style, "<", nil, xrb + scroll_padding, yrb, 0, h)
 
     xrb, yrb, wrb = self:get_scroll_button_rect(2)
-    local right_button_style = (self.hovered_scroll_button == 2 and #self.views > self.tab_offset + tabs_number - 1) and style.text or style.dim
+    local right_button_style = (self.hovered_scroll_button == 2 and #self.views > self.tab_offset + tabs_number - 1) and (style.tab_active_text or style.text) or (style.tab_text or style.dim)
     common.draw_text(style.icon_font, right_button_style, ">", nil, xrb + scroll_padding, yrb, 0, h)
   end
 

@@ -144,6 +144,13 @@ function TreeView:get_item_height()
 end
 
 
+---Height of the sidebar section header (e.g. the "EXPLORER" header).
+---@return number
+function TreeView:get_header_height()
+  return style.font:get_height() + style.padding.y
+end
+
+
 function TreeView:get_items(project, path, x, y, w, h)
   local dir = self:get_cached(project, path)
   coroutine.yield(dir, x, y, w, h)
@@ -164,8 +171,9 @@ function TreeView:each_item()
     local count_lines = 0
     local ox, oy = self:get_content_offset()
     local h = self:get_item_height()
+    local y0 = oy + self:get_header_height() + style.padding.y
     for k, project in ipairs(core.projects) do
-      count_lines = count_lines + self:get_items(project, project.path, ox, oy + style.padding.y + h * count_lines, self.size.x, h)
+      count_lines = count_lines + self:get_items(project, project.path, ox, y0 + h * count_lines, self.size.x, h)
     end
     self.count_lines = count_lines
   end)
@@ -313,8 +321,8 @@ function TreeView:update()
     self.last_scroll_y = self.scroll.y
   end
 
-  local config = config.plugins.treeview
-  if config.highlight_focused_file then
+  local treeview_config = config.plugins.treeview
+  if treeview_config.highlight_focused_file then
     -- Try to only highlight when we actually change tabs
     local current_node = core.root_view:get_active_node()
     local current_active_view = core.active_view
@@ -326,9 +334,9 @@ function TreeView:update()
         local abs_filename = current_active_view.doc
                              and current_active_view.doc.abs_filename or ""
         self:set_selection_to_path(abs_filename,
-                                   config.expand_dirs_to_focused_file,
-                                   config.scroll_to_focused_file,
-                                   not config.animate_scroll_to_focused_file)
+                                   treeview_config.expand_dirs_to_focused_file,
+                                   treeview_config.scroll_to_focused_file,
+                                   not treeview_config.animate_scroll_to_focused_file)
       end
     end
   end
@@ -442,8 +450,26 @@ end
 function TreeView:draw()
   if not self.visible then return end
   self:draw_background(style.background2)
-  local _y, _h = self.position.y, self.size.y
 
+  -- Draw the sidebar section header (like the VSCode "EXPLORER" header).
+  local header_h = self:get_header_height()
+  local header_font = style.font
+  local header_fh = header_font:get_height()
+  local header_x = self.position.x + style.padding.x
+  local header_y = self.position.y + (header_h - header_fh) / 2
+  renderer.draw_rect(self.position.x, self.position.y, self.size.x, header_h,
+    style.sidebar_header_background or style.background2)
+  common.draw_text(header_font, style.sidebar_header_text or style.dim,
+    "EXPLORER", nil, header_x, header_y, 0, header_fh)
+  if core.projects and core.projects[1] then
+    common.draw_text(header_font, style.sidebar_header_text or style.dim,
+      common.basename(core.projects[1].path), "right",
+      header_x, header_y, self.size.x - 2 * style.padding.x, header_fh)
+  end
+
+  -- The list is scrolled independently of the fixed header.
+  local _y, _h = self.position.y + header_h, self.size.y - header_h
+  core.push_clip_rect(self.position.x, _y, self.size.x, _h)
   for item, x,y,w,h in self:each_item() do
     if y + h >= _y and y < _y + _h then
       self:draw_item(item,
@@ -452,8 +478,9 @@ function TreeView:draw()
         x, y, w, h)
     end
   end
-
   self:draw_scrollbar()
+  core.pop_clip_rect()
+
   if self.hovered_item and self.tooltip.x and self.tooltip.alpha > 0 then
     core.root_view:defer_draw(self.draw_tooltip, self)
   end
@@ -529,7 +556,19 @@ end
 -- init
 local view = TreeView()
 local node = core.root_view:get_active_node()
-view.node = node:split("left", view, {x = true}, true)
+
+-- Insert the activity bar to the left of the treeview. The activity bar
+-- plugin only defines the view; it is plugged into the layout here.
+local activitybar_ok, ActivityBar = pcall(require, "plugins.activitybar")
+if activitybar_ok and ActivityBar then
+  local activity_bar = ActivityBar()
+  node:split("left", activity_bar, {x = true}, false)
+  view.node = node.b:split("left", view, {x = true}, true)
+  activity_bar:set_item_active("explorer", function() return view.visible end)
+  view.activity_bar = activity_bar
+else
+  view.node = node:split("left", view, {x = true}, true)
+end
 
 -- The toolbarview plugin is special because it is plugged inside
 -- a treeview pane which is itelf provided in a plugin.

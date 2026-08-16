@@ -365,6 +365,12 @@ function CommandView:draw_line_highlight()
 end
 
 
+function CommandView:draw_background()
+  renderer.draw_rect(self.position.x, self.position.y, self.size.x, self.size.y,
+    style.quickinput_background)
+end
+
+
 function CommandView:draw_line_gutter(idx, x, y)
   local yoffset = self:get_line_text_y_offset()
   local pos = self.position
@@ -387,10 +393,10 @@ local function draw_suggestions_box(self)
   core.push_clip_rect(rx, ry, rw, rh)
   -- draw suggestions background
   if #self.suggestions > 0 then
-    renderer.draw_rect(rx, ry, rw, rh, style.background3)
+    renderer.draw_rect(rx, ry, rw, rh, style.quickinput_background or style.background3)
     renderer.draw_rect(rx, ry - dh, rw, dh, style.divider)
     local y = self.position.y - self.selection_offset - dh
-    renderer.draw_rect(rx, y, rw, lh, style.line_highlight)
+    renderer.draw_rect(rx, y, rw, lh, style.quickinput_selected_background or style.line_highlight)
   end
 
   -- draw suggestion text
@@ -398,13 +404,13 @@ local function draw_suggestions_box(self)
   local last = math.min(self.suggestions_offset + config.max_visible_commands, #self.suggestions)
   for i=first, last do
     local item = self.suggestions[i]
-    local color = (i == self.suggestion_idx) and style.accent or style.text
+    local color = (i == self.suggestion_idx) and (style.quickinput_selected_text or style.accent) or (style.quickinput_text or style.text)
     local y = self.position.y - (i - first + 1) * lh - dh
     common.draw_text(self:get_font(), color, item.text, nil, x, y, 0, lh)
 
     if item.info then
       local w = self.size.x - x - style.padding.x
-      common.draw_text(self:get_font(), style.dim, item.info, "right", x, y, w, lh)
+      common.draw_text(self:get_font(), style.quickinput_text_info or style.dim, item.info, "right", x, y, w, lh)
     end
   end
   core.pop_clip_rect()
